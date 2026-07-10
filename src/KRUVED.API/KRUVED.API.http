@@ -1,0 +1,6 @@
+@APSRA.API_HostAddress = http://localhost:5189
+
+GET {{APSRA.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

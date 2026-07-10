@@ -1,0 +1,12 @@
+E:\Projects\ChatBot\src\KRUVED.Shared\bin\Debug\net8.0\KRUVED.Shared.deps.json
+E:\Projects\ChatBot\src\KRUVED.Shared\bin\Debug\net8.0\KRUVED.Shared.dll
+E:\Projects\ChatBot\src\KRUVED.Shared\bin\Debug\net8.0\KRUVED.Shared.pdb
+E:\Projects\ChatBot\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.GeneratedMSBuildEditorConfig.editorconfig
+E:\Projects\ChatBot\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.AssemblyInfoInputs.cache
+E:\Projects\ChatBot\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.AssemblyInfo.cs
+E:\Projects\ChatBot\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.csproj.CoreCompileInputs.cache
+E:\Projects\ChatBot\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.dll
+E:\Projects\ChatBot\src\KRUVED.Shared\obj\Debug\net8.0\refint\KRUVED.Shared.dll
+E:\Projects\ChatBot\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.pdb
+E:\Projects\ChatBot\src\KRUVED.Shared\obj\Debug\net8.0\ref\KRUVED.Shared.dll
+E:\Projects\ChatBot\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.sourcelink.json

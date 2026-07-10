@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/KRUVED.API/KRUVED.API.csproj" />
+    <Project Path="src/KRUVED.Application/KRUVED.Application.csproj" />
+    <Project Path="src/KRUVED.Shared/KRUVED.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/KRUVED.UnitTests/KRUVED.UnitTests.csproj" />
+  </Folder>
+</Solution>
