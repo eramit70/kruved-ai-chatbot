@@ -4,7 +4,7 @@ WORKDIR /src
 
 COPY . .
 
-RUN dotnet restore KRUVED.sln
+RUN dotnet restore src/KRUVED.API/KRUVED.API.csproj
 RUN dotnet publish src/KRUVED.API/KRUVED.API.csproj -c Release -o /app/publish
 
 # Runtime stage
