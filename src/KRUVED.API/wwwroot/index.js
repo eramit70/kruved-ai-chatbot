@@ -9,29 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.querySelector('.sidebar');
     const menuBtn = document.getElementById('menu-btn');
     const sidebarBackdrop = document.getElementById('sidebar-backdrop');
-    const themeToggle = document.getElementById('theme-toggle');
-    const themeStorageKey = 'kruved_theme';
-    let typingScrollTimer;
 
     let currentSessionId = sessionStorage.getItem('chat_session_id') || crypto.randomUUID();
     sessionStorage.setItem('chat_session_id', currentSessionId);
 
     function sessionHeaders(headers = {}) {
         return { ...headers, 'X-Session-ID': currentSessionId };
-    }
-
-    function scrollToLatestMessage() {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    function applyTheme(theme) {
-        const isLight = theme === 'light';
-        document.documentElement.dataset.theme = isLight ? 'light' : 'dark';
-        themeToggle.innerHTML = isLight
-            ? '<i class="fa-solid fa-moon"></i><span>Dark</span>'
-            : '<i class="fa-solid fa-sun"></i><span>Light</span>';
-        themeToggle.setAttribute('aria-label', `Switch to ${isLight ? 'dark' : 'light'} theme`);
-        localStorage.setItem(themeStorageKey, isLight ? 'light' : 'dark');
     }
 
     function setSidebarOpen(isOpen) {
@@ -53,15 +36,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const avatarDiv = document.createElement('div');
         avatarDiv.classList.add('avatar-sm');
+        const icon = document.createElement('i');
         if (isUser) {
-            avatarDiv.textContent = '🙂';
+            icon.className = 'fa-solid fa-user';
         } else if (isSystem) {
-            const icon = document.createElement('i');
             icon.className = 'fa-solid fa-circle-exclamation';
-            avatarDiv.appendChild(icon);
         } else {
-            avatarDiv.textContent = '🤖';
+            icon.className = 'fa-solid fa-robot';
         }
+        avatarDiv.appendChild(icon);
 
         const wrapperDiv = document.createElement('div');
         wrapperDiv.classList.add('message-wrapper');
@@ -78,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const parsedMarkdown = marked.parse(text);
             const sanitizedHtml = DOMPurify.sanitize(parsedMarkdown);
             bubbleDiv.innerHTML = sanitizedHtml;
-            addCodeCopyButtons(bubbleDiv);
         } else {
             bubbleDiv.textContent = text;
         }
@@ -90,127 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         messageDiv.appendChild(wrapperDiv);
 
         messagesContainer.appendChild(messageDiv);
-        scrollToLatestMessage();
-
-        if (!isUser && !isSystem) {
-            const cursor = document.createElement('span');
-            cursor.className = 'response-cursor';
-            cursor.setAttribute('aria-hidden', 'true');
-            bubbleDiv.appendChild(cursor);
-            window.setTimeout(() => cursor.remove(), 1200);
-        }
-
-        return bubbleDiv;
-    }
-
-    async function renderStreamingReply(response) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        let reply = '';
-        let replyBubble;
-        let cursor;
-
-        const delay = milliseconds => new Promise(resolve => window.setTimeout(resolve, milliseconds));
-
-        const renderReply = () => {
-            replyBubble.innerHTML = DOMPurify.sanitize(marked.parse(reply));
-            replyBubble.appendChild(cursor);
-            addCodeCopyButtons(replyBubble);
-            scrollToLatestMessage();
-        };
-
-        while (true) {
-            const { value, done } = await reader.read();
-            buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
-
-            const events = buffer.split('\n\n');
-            buffer = events.pop();
-
-            for (const event of events) {
-                const dataLine = event.split('\n').find(line => line.startsWith('data: '));
-                if (!dataLine) continue;
-
-                const payload = JSON.parse(dataLine.slice(6));
-                if (payload.error) throw new Error(payload.error);
-                if (!payload.token) continue;
-
-                if (!replyBubble) {
-                    removeTypingIndicator();
-                    replyBubble = appendMessage('Kruved AI Assistant', '');
-                    replyBubble.innerHTML = '';
-                    cursor = document.createElement('span');
-                    cursor.className = 'response-cursor';
-                    cursor.setAttribute('aria-hidden', 'true');
-                }
-
-                // A provider can send many words in one chunk. Reveal each word separately so
-                // the result still feels like a ChatGPT-style typed response.
-                const words = payload.token.match(/\S+\s*|\s+/g) || [payload.token];
-                for (const word of words) {
-                    reply += word;
-                    renderReply();
-                    await delay(22);
-                }
-            }
-
-            if (done) break;
-        }
-
-        if (!replyBubble) throw new Error('The assistant returned an empty response.');
-        cursor.remove();
-        await loadSessions(searchInput.value.trim());
-    }
-
-    function addCodeCopyButtons(messageBubble) {
-        messageBubble.querySelectorAll('pre').forEach(pre => {
-            const code = pre.querySelector('code');
-            if (!code || pre.querySelector('.copy-code-btn')) return;
-
-            const copyButton = document.createElement('button');
-            copyButton.type = 'button';
-            copyButton.className = 'copy-code-btn';
-            copyButton.innerHTML = '<i class="fa-regular fa-copy"></i><span>Copy</span>';
-            copyButton.setAttribute('aria-label', 'Copy code');
-
-            copyButton.addEventListener('click', async () => {
-                try {
-                    await copyCodeToClipboard(code.textContent || '');
-                    copyButton.innerHTML = '<i class="fa-solid fa-check"></i><span>Copied</span>';
-                    window.setTimeout(() => {
-                        copyButton.innerHTML = '<i class="fa-regular fa-copy"></i><span>Copy</span>';
-                    }, 1800);
-                } catch {
-                    copyButton.querySelector('span').textContent = 'Unable to copy';
-                }
-            });
-
-            pre.appendChild(copyButton);
-        });
-    }
-
-    async function copyCodeToClipboard(text) {
-        if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(text);
-            return;
-        }
-
-        const tempTextArea = document.createElement('textarea');
-        tempTextArea.value = text;
-        tempTextArea.setAttribute('readonly', 'true');
-        tempTextArea.style.position = 'fixed';
-        tempTextArea.style.top = '-9999px';
-        tempTextArea.style.left = '-9999px';
-        document.body.appendChild(tempTextArea);
-        tempTextArea.focus();
-        tempTextArea.select();
-
-        const copied = document.execCommand('copy');
-        document.body.removeChild(tempTextArea);
-
-        if (!copied) {
-            throw new Error('Unable to copy code to the clipboard.');
-        }
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
     function showTypingIndicator() {
@@ -220,7 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const avatarDiv = document.createElement('div');
         avatarDiv.classList.add('avatar-sm');
-        avatarDiv.textContent = '🤖';
+        const icon = document.createElement('i');
+        icon.className = 'fa-solid fa-robot';
+        avatarDiv.appendChild(icon);
 
         const wrapperDiv = document.createElement('div');
         wrapperDiv.classList.add('message-wrapper');
@@ -234,8 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const typingIndicator = document.createElement('div');
         typingIndicator.classList.add('typing-indicator');
-        typingIndicator.setAttribute('role', 'status');
-        typingIndicator.innerHTML = '<span class="typing-label">AI is thinking</span><span></span><span></span><span></span>';
+        typingIndicator.innerHTML = '<span></span><span></span><span></span>';
 
         bubbleDiv.appendChild(typingIndicator);
         wrapperDiv.appendChild(senderDiv);
@@ -245,8 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loaderDiv.appendChild(wrapperDiv);
 
         messagesContainer.appendChild(loaderDiv);
-        scrollToLatestMessage();
-        typingScrollTimer = window.setInterval(scrollToLatestMessage, 250);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
     function removeTypingIndicator() {
@@ -254,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (indicator) {
             indicator.remove();
         }
-        window.clearInterval(typingScrollTimer);
     }
 
     // Load dynamic sessions list
@@ -442,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sendBtn.disabled = true;
 
         try {
-            const response = await fetch('/api/chat/stream', {
+            const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: sessionHeaders({
                     'Content-Type': 'application/json',
@@ -450,11 +311,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ message: messageText })
             });
 
-            if (response.ok && response.body) {
-                await renderStreamingReply(response);
+            const result = await response.json();
+            removeTypingIndicator();
+
+            if (response.ok && result.success) {
+                appendMessage('Kruved AI Assistant', result.data.reply);
+                // Reload sessions to update title if it was the first message
+                await loadSessions(searchInput.value.trim());
             } else {
-                const result = await response.json();
-                removeTypingIndicator();
                 let errorMsg = result.message || 'Unknown error occurred.';
                 if (result.errors && result.errors.length > 0) {
                     errorMsg += '\nDetails:\n' + result.errors.map(err => `- ${err.field}: ${err.message}`).join('\n');
@@ -493,13 +357,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
 
-    themeToggle.addEventListener('click', () => {
-        applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
-    });
-
     // Initial startup sequence
     async function init() {
-        applyTheme(localStorage.getItem(themeStorageKey) || 'dark');
         await loadSessions();
         
         // A tab keeps its own ID in sessionStorage. Reloading the same tab restores its history;

@@ -82,27 +82,5 @@
       }
     ],
     "ReturnTypes": []
-  },
-  {
-    "ContainingType": "KRUVED.API.Controllers.ChatController",
-    "Method": "StreamMessage",
-    "RelativePath": "api/Chat/stream",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "KRUVED.Shared.Models.ChatRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "System.Void",
-        "MediaTypes": [],
-        "StatusCode": 200
-      }
-    ]
   }
 ]
