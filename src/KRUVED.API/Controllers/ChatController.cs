@@ -17,16 +17,19 @@ namespace KRUVED.API.Controllers
             _chatService = chatService;
         }
 
+        private bool TryGetSessionId(out string sessionId)
+        {
+            sessionId = Request.Headers["X-Session-ID"].ToString();
+            return Guid.TryParse(sessionId, out _);
+        }
+
         [HttpPost]
         public async Task<IActionResult> SendMessage([FromBody] ChatRequest request)
         {
-            // Retrieve session identifier from header, generate new if missing
-            if (!Request.Headers.TryGetValue("X-Session-ID", out var sessionId) || string.IsNullOrWhiteSpace(sessionId))
+            if (!TryGetSessionId(out var sessionId))
             {
-                sessionId = Guid.NewGuid().ToString();
+                return ErrorResponse("A valid X-Session-ID header is required.");
             }
-
-            Response.Headers["X-Session-ID"] = sessionId;
 
             // Query chatbot service
             var reply = await _chatService.GetChatReplyAsync(sessionId, request.Message);
@@ -42,14 +45,16 @@ namespace KRUVED.API.Controllers
         [HttpGet("sessions")]
         public async Task<IActionResult> GetSessions()
         {
-            var sessions = await _chatService.GetSessionsAsync();
+            if (!TryGetSessionId(out var sessionId)) return ErrorResponse("A valid X-Session-ID header is required.");
+            var sessions = await _chatService.GetSessionsAsync(sessionId);
             return SuccessResponse(sessions, "Sessions retrieved successfully.");
         }
 
         [HttpGet("sessions/{id}")]
         public async Task<IActionResult> GetSession(string id)
         {
-            var session = await _chatService.GetSessionAsync(id);
+            if (!TryGetSessionId(out var sessionId)) return ErrorResponse("A valid X-Session-ID header is required.");
+            var session = await _chatService.GetSessionAsync(id, sessionId);
             if (session == null)
             {
                 return NotFoundResponse($"Session with ID {id} not found.");
@@ -60,14 +65,16 @@ namespace KRUVED.API.Controllers
         [HttpPost("sessions")]
         public async Task<IActionResult> CreateSession()
         {
-            var session = await _chatService.CreateSessionAsync();
+            if (!TryGetSessionId(out var sessionId)) return ErrorResponse("A valid X-Session-ID header is required.");
+            var session = await _chatService.CreateSessionAsync(sessionId);
             return CreatedResponse(session, "Session created successfully.");
         }
 
         [HttpDelete("sessions/{id}")]
         public async Task<IActionResult> DeleteSession(string id)
         {
-            var deleted = await _chatService.DeleteSessionAsync(id);
+            if (!TryGetSessionId(out var sessionId)) return ErrorResponse("A valid X-Session-ID header is required.");
+            var deleted = await _chatService.DeleteSessionAsync(id, sessionId);
             if (!deleted)
             {
                 return NotFoundResponse($"Session with ID {id} not found.");
@@ -78,7 +85,8 @@ namespace KRUVED.API.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> SearchSessions([FromQuery] string query)
         {
-            var results = await _chatService.SearchSessionsAsync(query);
+            if (!TryGetSessionId(out var sessionId)) return ErrorResponse("A valid X-Session-ID header is required.");
+            var results = await _chatService.SearchSessionsAsync(query, sessionId);
             return SuccessResponse(results, "Search completed successfully.");
         }
     }

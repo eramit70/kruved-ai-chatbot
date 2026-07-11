@@ -7,14 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const sessionsList = document.getElementById('sessions-list');
     const searchInput = document.getElementById('search-input');
 
-    let currentSessionId = localStorage.getItem('chat_session_id') || null;
+    let currentSessionId = sessionStorage.getItem('chat_session_id') || crypto.randomUUID();
+    sessionStorage.setItem('chat_session_id', currentSessionId);
 
-    // Helper to generate UUID if needed
-    function generateUUID() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
+    function sessionHeaders(headers = {}) {
+        return { ...headers, 'X-Session-ID': currentSessionId };
     }
 
     function appendMessage(sender, text, isUser = false, isSystem = false) {
@@ -116,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadSessions(query = '') {
         try {
             const url = query ? `/api/chat/search?query=${encodeURIComponent(query)}` : '/api/chat/sessions';
-            const response = await fetch(url);
+            const response = await fetch(url, { headers: sessionHeaders() });
             const result = await response.json();
             
             if (response.ok && result.success) {
@@ -188,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Select/Load specific chat session
     async function selectSession(sessionId) {
         currentSessionId = sessionId;
-        localStorage.setItem('chat_session_id', sessionId);
+        sessionStorage.setItem('chat_session_id', sessionId);
         
         // Highlight active session item in sidebar
         const items = sessionsList.querySelectorAll('.session-item');
@@ -201,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         messagesContainer.innerHTML = '';
         
         try {
-            const response = await fetch(`/api/chat/sessions/${sessionId}`);
+            const response = await fetch(`/api/chat/sessions/${sessionId}`, { headers: sessionHeaders() });
             const result = await response.json();
             
             if (response.ok && result.success) {
@@ -226,14 +223,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Create a new session
     async function createNewSession() {
         try {
+            currentSessionId = crypto.randomUUID();
+            sessionStorage.setItem('chat_session_id', currentSessionId);
             const response = await fetch('/api/chat/sessions', {
-                method: 'POST'
+                method: 'POST',
+                headers: sessionHeaders()
             });
             const result = await response.json();
             if (response.ok && result.success) {
                 const newSession = result.data;
                 currentSessionId = newSession.id;
-                localStorage.setItem('chat_session_id', currentSessionId);
+                sessionStorage.setItem('chat_session_id', currentSessionId);
                 await loadSessions();
                 await selectSession(currentSessionId);
                 searchInput.value = '';
@@ -247,7 +247,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function deleteChatSession(sessionId) {
         try {
             const response = await fetch(`/api/chat/sessions/${sessionId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: sessionHeaders()
             });
             const result = await response.json();
             if (response.ok && result.success) {
@@ -255,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // If we deleted the active session, switch to the first available or create a new one
                 if (currentSessionId === sessionId) {
-                    const nextResponse = await fetch('/api/chat/sessions');
+                    const nextResponse = await fetch('/api/chat/sessions', { headers: sessionHeaders() });
                     const nextResult = await nextResponse.json();
                     if (nextResponse.ok && nextResult.success && nextResult.data.length > 0) {
                         await selectSession(nextResult.data[0].id);
@@ -277,8 +278,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // If no active session, create one first
         if (!currentSessionId) {
-            currentSessionId = generateUUID();
-            localStorage.setItem('chat_session_id', currentSessionId);
+            currentSessionId = crypto.randomUUID();
+            sessionStorage.setItem('chat_session_id', currentSessionId);
         }
 
         // Render user bubble
@@ -294,10 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
-                headers: {
+                headers: sessionHeaders({
                     'Content-Type': 'application/json',
-                    'X-Session-ID': currentSessionId
-                },
+                }),
                 body: JSON.stringify({ message: messageText })
             });
 
@@ -344,25 +344,20 @@ document.addEventListener('DOMContentLoaded', () => {
     async function init() {
         await loadSessions();
         
-        // If there's a stored session ID, use it. Otherwise find the first session or create one.
+        // A tab keeps its own ID in sessionStorage. Reloading the same tab restores its history;
+        // opening another tab receives a different ID and therefore a different history.
         if (currentSessionId) {
-            const response = await fetch(`/api/chat/sessions/${currentSessionId}`);
+            const response = await fetch(`/api/chat/sessions/${currentSessionId}`, { headers: sessionHeaders() });
             if (response.ok) {
                 await selectSession(currentSessionId);
+                return;
             } else {
                 currentSessionId = null;
             }
         }
         
         if (!currentSessionId) {
-            // Check if backend already has sessions we can select
-            const response = await fetch('/api/chat/sessions');
-            const result = await response.json();
-            if (response.ok && result.success && result.data.length > 0) {
-                await selectSession(result.data[0].id);
-            } else {
-                await createNewSession();
-            }
+            await createNewSession();
         }
     }
 

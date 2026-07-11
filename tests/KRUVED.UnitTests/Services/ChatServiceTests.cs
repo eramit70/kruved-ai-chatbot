@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System;
 using Microsoft.Extensions.Options;
 using Moq;
 using KRUVED.Application.Services;
@@ -34,7 +35,8 @@ namespace KRUVED.UnitTests.Services
         public async Task CreateSessionAsync_ShouldInitializeWithDefaultTitleAndUniqueId()
         {
             // Act
-            var session = await _chatService.CreateSessionAsync();
+            var sessionId = Guid.NewGuid().ToString();
+            var session = await _chatService.CreateSessionAsync(sessionId);
 
             // Assert
             Assert.NotNull(session);
@@ -44,25 +46,28 @@ namespace KRUVED.UnitTests.Services
         }
 
         [Fact]
-        public async Task GetSessionsAsync_ShouldReturnSeededSession()
+        public async Task GetSessionsAsync_ShouldReturnOnlyTheRequestedSession()
         {
-            // Act
-            var sessions = await _chatService.GetSessionsAsync();
+            var sessionId = Guid.NewGuid().ToString();
+            await _chatService.CreateSessionAsync(sessionId);
+            var sessions = await _chatService.GetSessionsAsync(sessionId);
 
             // Assert
             Assert.NotEmpty(sessions);
-            Assert.Contains(sessions, s => s.Title == "New Conversation");
+            Assert.Single(sessions);
+            Assert.Equal(sessionId, sessions.Single().Id);
         }
 
         [Fact]
         public async Task DeleteSessionAsync_ShouldRemoveExistingSession()
         {
             // Arrange
-            var newSession = await _chatService.CreateSessionAsync();
+            var sessionId = Guid.NewGuid().ToString();
+            var newSession = await _chatService.CreateSessionAsync(sessionId);
 
             // Act
-            var deleted = await _chatService.DeleteSessionAsync(newSession.Id);
-            var sessions = await _chatService.GetSessionsAsync();
+            var deleted = await _chatService.DeleteSessionAsync(newSession.Id, sessionId);
+            var sessions = await _chatService.GetSessionsAsync(sessionId);
 
             // Assert
             Assert.True(deleted);
@@ -73,15 +78,34 @@ namespace KRUVED.UnitTests.Services
         public async Task SearchSessionsAsync_ShouldFilterByTitleOrContent()
         {
             // Arrange
-            var targetSession = await _chatService.CreateSessionAsync();
+            var sessionId = Guid.NewGuid().ToString();
+            var targetSession = await _chatService.CreateSessionAsync(sessionId);
             targetSession.Title = "Learning C#";
 
             // Act
-            var searchResults = (await _chatService.SearchSessionsAsync("Learning")).ToList();
+            var searchResults = (await _chatService.SearchSessionsAsync("Learning", sessionId)).ToList();
 
             // Assert
             Assert.Single(searchResults);
             Assert.Equal(targetSession.Id, searchResults[0].Id);
+        }
+
+        [Fact]
+        public async Task SessionOperations_ShouldNotExposeAnotherTabHistory()
+        {
+            var sessionA = Guid.NewGuid().ToString();
+            var sessionB = Guid.NewGuid().ToString();
+            await _chatService.CreateSessionAsync(sessionA);
+            await _chatService.CreateSessionAsync(sessionB);
+
+            var visibleToA = await _chatService.GetSessionsAsync(sessionA);
+            var sessionBVisibleToA = await _chatService.GetSessionAsync(sessionB, sessionA);
+            var deleteBAsA = await _chatService.DeleteSessionAsync(sessionB, sessionA);
+
+            Assert.Single(visibleToA);
+            Assert.Equal(sessionA, visibleToA.Single().Id);
+            Assert.Null(sessionBVisibleToA);
+            Assert.False(deleteBAsA);
         }
     }
 }

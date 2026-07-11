@@ -6,11 +6,11 @@ namespace KRUVED.Application.Services
 {
     public interface IChatService
     {
-        Task<IEnumerable<ChatSession>> GetSessionsAsync();
-        Task<ChatSession> GetSessionAsync(string id);
-        Task<ChatSession> CreateSessionAsync();
+        Task<IEnumerable<ChatSession>> GetSessionsAsync(string sessionId);
+        Task<ChatSession> GetSessionAsync(string id, string sessionId);
+        Task<ChatSession> CreateSessionAsync(string sessionId);
         Task<string> GetChatReplyAsync(string sessionId, string message);
-        Task<bool> DeleteSessionAsync(string id);
-        Task<IEnumerable<ChatSession>> SearchSessionsAsync(string query);
+        Task<bool> DeleteSessionAsync(string id, string sessionId);
+        Task<IEnumerable<ChatSession>> SearchSessionsAsync(string query, string sessionId);
     }
 }

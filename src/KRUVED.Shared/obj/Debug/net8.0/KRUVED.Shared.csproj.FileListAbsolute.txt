@@ -10,3 +10,15 @@ E:\Projects\ChatBot\src\KRUVED.Shared\obj\Debug\net8.0\refint\KRUVED.Shared.dll
 E:\Projects\ChatBot\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.pdb
 E:\Projects\ChatBot\src\KRUVED.Shared\obj\Debug\net8.0\ref\KRUVED.Shared.dll
 E:\Projects\ChatBot\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.sourcelink.json
+C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\40e9f0376ed20e80\src\KRUVED.Shared\bin\Debug\net8.0\KRUVED.Shared.deps.json
+C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\40e9f0376ed20e80\src\KRUVED.Shared\bin\Debug\net8.0\KRUVED.Shared.dll
+C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\40e9f0376ed20e80\src\KRUVED.Shared\bin\Debug\net8.0\KRUVED.Shared.pdb
+C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\40e9f0376ed20e80\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\40e9f0376ed20e80\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.AssemblyInfoInputs.cache
+C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\40e9f0376ed20e80\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.AssemblyInfo.cs
+C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\40e9f0376ed20e80\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.csproj.CoreCompileInputs.cache
+C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\40e9f0376ed20e80\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.sourcelink.json
+C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\40e9f0376ed20e80\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.dll
+C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\40e9f0376ed20e80\src\KRUVED.Shared\obj\Debug\net8.0\refint\KRUVED.Shared.dll
+C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\40e9f0376ed20e80\src\KRUVED.Shared\obj\Debug\net8.0\KRUVED.Shared.pdb
+C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\40e9f0376ed20e80\src\KRUVED.Shared\obj\Debug\net8.0\ref\KRUVED.Shared.dll

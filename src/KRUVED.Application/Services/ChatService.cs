@@ -25,22 +25,14 @@ namespace KRUVED.Application.Services
             _httpClientFactory = httpClientFactory;
             _groqSettings = groqOptions.Value;
             _sessions = new Dictionary<string, ChatSession>();
-
-            // Seed an initial chat session so the app has at least one session on startup
-            var initialSession = new ChatSession
-            {
-                Id = Guid.NewGuid().ToString(),
-                Title = "New Conversation",
-                CreatedAt = DateTime.UtcNow
-            };
-            _sessions[initialSession.Id] = initialSession;
         }
 
-        public Task<IEnumerable<ChatSession>> GetSessionsAsync()
+        public Task<IEnumerable<ChatSession>> GetSessionsAsync(string sessionId)
         {
             lock (_lock)
             {
                 var sessionsList = _sessions.Values
+                    .Where(s => s.Id == sessionId)
                     .OrderByDescending(s => s.CreatedAt)
                     .Select(s => new ChatSession
                     {
@@ -54,11 +46,11 @@ namespace KRUVED.Application.Services
             }
         }
 
-        public Task<ChatSession> GetSessionAsync(string id)
+        public Task<ChatSession> GetSessionAsync(string id, string sessionId)
         {
             lock (_lock)
             {
-                if (_sessions.TryGetValue(id, out var session))
+                if (id == sessionId && _sessions.TryGetValue(id, out var session))
                 {
                     return Task.FromResult(session);
                 }
@@ -66,13 +58,18 @@ namespace KRUVED.Application.Services
             }
         }
 
-        public Task<ChatSession> CreateSessionAsync()
+        public Task<ChatSession> CreateSessionAsync(string sessionId)
         {
             lock (_lock)
             {
+                if (_sessions.TryGetValue(sessionId, out var existingSession))
+                {
+                    return Task.FromResult(existingSession);
+                }
+
                 var session = new ChatSession
                 {
-                    Id = Guid.NewGuid().ToString(),
+                    Id = sessionId,
                     Title = "New Conversation",
                     CreatedAt = DateTime.UtcNow
                 };
@@ -81,26 +78,27 @@ namespace KRUVED.Application.Services
             }
         }
 
-        public Task<bool> DeleteSessionAsync(string id)
+        public Task<bool> DeleteSessionAsync(string id, string sessionId)
         {
             lock (_lock)
             {
-                var removed = _sessions.Remove(id);
+                var removed = id == sessionId && _sessions.Remove(id);
                 return Task.FromResult(removed);
             }
         }
 
-        public Task<IEnumerable<ChatSession>> SearchSessionsAsync(string query)
+        public Task<IEnumerable<ChatSession>> SearchSessionsAsync(string query, string sessionId)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
-                return GetSessionsAsync();
+                return GetSessionsAsync(sessionId);
             }
 
             lock (_lock)
             {
                 var lowerQuery = query.ToLowerInvariant();
                 var matches = _sessions.Values
+                    .Where(s => s.Id == sessionId)
                     .Where(s => (s.Title != null && s.Title.ToLowerInvariant().Contains(lowerQuery)) ||
                                 s.Messages.Any(m => m.Content != null && m.Content.ToLowerInvariant().Contains(lowerQuery)))
                     .OrderByDescending(s => s.CreatedAt)

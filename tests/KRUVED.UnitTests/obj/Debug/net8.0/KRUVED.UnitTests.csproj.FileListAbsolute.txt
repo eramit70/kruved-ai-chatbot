@@ -120,3 +120,4 @@ E:\Projects\ChatBot\tests\KRUVED.UnitTests\obj\Debug\net8.0\refint\KRUVED.UnitTe
 E:\Projects\ChatBot\tests\KRUVED.UnitTests\obj\Debug\net8.0\KRUVED.UnitTests.pdb
 E:\Projects\ChatBot\tests\KRUVED.UnitTests\obj\Debug\net8.0\KRUVED.UnitTests.genruntimeconfig.cache
 E:\Projects\ChatBot\tests\KRUVED.UnitTests\obj\Debug\net8.0\ref\KRUVED.UnitTests.dll
+E:\Projects\ChatBot\tests\KRUVED.UnitTests\obj\Debug\net8.0\KRUVED.UnitTests.sourcelink.json
