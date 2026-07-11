@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 using KRUVED.Application.Services;
 using KRUVED.Shared.Models;
@@ -40,6 +41,38 @@ namespace KRUVED.API.Controllers
             };
 
             return SuccessResponse(response, "Reply generated successfully.");
+        }
+
+        [HttpPost("stream")]
+        public async Task StreamMessage([FromBody] ChatRequest request)
+        {
+            if (!TryGetSessionId(out var sessionId))
+            {
+                Response.StatusCode = 400;
+                await Response.WriteAsJsonAsync(new { success = false, message = "A valid X-Session-ID header is required." });
+                return;
+            }
+
+            Response.ContentType = "text/event-stream";
+            Response.Headers.CacheControl = "no-cache";
+            Response.Headers["X-Accel-Buffering"] = "no";
+
+            try
+            {
+                await foreach (var token in _chatService.StreamChatReplyAsync(sessionId, request.Message))
+                {
+                    await Response.WriteAsync($"data: {JsonSerializer.Serialize(new { token })}\n\n");
+                    await Response.Body.FlushAsync();
+                }
+
+                await Response.WriteAsync("data: {\"done\":true}\n\n");
+                await Response.Body.FlushAsync();
+            }
+            catch (Exception ex)
+            {
+                await Response.WriteAsync($"data: {JsonSerializer.Serialize(new { error = ex.Message })}\n\n");
+                await Response.Body.FlushAsync();
+            }
         }
 
         [HttpGet("sessions")]

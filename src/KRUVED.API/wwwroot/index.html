@@ -66,19 +66,21 @@
                         <p class="status-text">Groq Llama 3.3 • Active</p>
                     </div>
                 </div>
+                <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
+                    <i class="fa-solid fa-sun"></i>
+                    <span>Light</span>
+                </button>
             </header>
 
             <!-- Messages Window -->
             <section class="messages-container" id="messages-container">
                 <!-- Welcome Message -->
-                <div class="message assistant">
-                    <div class="avatar-sm">
-                        <i class="fa-solid fa-robot"></i>
-                    </div>
+                    <div class="message assistant">
+                    <div class="avatar-sm">🤖</div>
                     <div class="message-wrapper">
                         <div class="message-sender">APSRA Assistant</div>
                         <div class="message-bubble">
-                            Hello! I am your APSRA AI assistant. How can I help you today?
+                            Hello! I am your APSRA AI assistant. How can I help you today?<span class="response-cursor" aria-hidden="true"></span>
                         </div>
                     </div>
                 </div>
