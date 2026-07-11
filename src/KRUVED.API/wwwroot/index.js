@@ -11,7 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebarBackdrop = document.getElementById('sidebar-backdrop');
     const themeToggle = document.getElementById('theme-toggle');
     const themeStorageKey = 'kruved_theme';
-    let typingScrollTimer;
+    const autoScrollThreshold = 80;
+    let shouldAutoScroll = true;
+    let isProgrammaticScroll = false;
 
     let currentSessionId = sessionStorage.getItem('chat_session_id') || crypto.randomUUID();
     sessionStorage.setItem('chat_session_id', currentSessionId);
@@ -20,8 +22,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return { ...headers, 'X-Session-ID': currentSessionId };
     }
 
-    function scrollToLatestMessage() {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    function isNearBottom() {
+        return messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight <= autoScrollThreshold;
+    }
+
+    function syncAutoScrollState() {
+        if (isProgrammaticScroll) {
+            return;
+        }
+
+        const nearBottom = isNearBottom();
+        shouldAutoScroll = nearBottom;
+    }
+
+    function scrollToLatestMessage(force = false) {
+        if (force || shouldAutoScroll) {
+            isProgrammaticScroll = true;
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            window.requestAnimationFrame(() => {
+                isProgrammaticScroll = false;
+            });
+        }
     }
 
     function applyTheme(theme) {
@@ -39,6 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
         sidebarBackdrop.classList.toggle('is-visible', isOpen);
         menuBtn.setAttribute('aria-expanded', String(isOpen));
     }
+
+    messagesContainer.addEventListener('scroll', syncAutoScrollState, { passive: true });
 
     function appendMessage(sender, text, isUser = false, isSystem = false) {
         const messageDiv = document.createElement('div');
@@ -120,46 +143,50 @@ document.addEventListener('DOMContentLoaded', () => {
             scrollToLatestMessage();
         };
 
-        while (true) {
-            const { value, done } = await reader.read();
-            buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+        try {
+            while (true) {
+                const { value, done } = await reader.read();
+                buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
 
-            const events = buffer.split('\n\n');
-            buffer = events.pop();
+                const events = buffer.split('\n\n');
+                buffer = events.pop();
 
-            for (const event of events) {
-                const dataLine = event.split('\n').find(line => line.startsWith('data: '));
-                if (!dataLine) continue;
+                for (const event of events) {
+                    const dataLine = event.split('\n').find(line => line.startsWith('data: '));
+                    if (!dataLine) continue;
 
-                const payload = JSON.parse(dataLine.slice(6));
-                if (payload.error) throw new Error(payload.error);
-                if (!payload.token) continue;
+                    const payload = JSON.parse(dataLine.slice(6));
+                    if (payload.error) throw new Error(payload.error);
+                    if (!payload.token) continue;
 
-                if (!replyBubble) {
-                    removeTypingIndicator();
-                    replyBubble = appendMessage('Kruved AI Assistant', '');
-                    replyBubble.innerHTML = '';
-                    cursor = document.createElement('span');
-                    cursor.className = 'response-cursor';
-                    cursor.setAttribute('aria-hidden', 'true');
+                    if (!replyBubble) {
+                        removeTypingIndicator();
+                        replyBubble = appendMessage('Kruved AI Assistant', '');
+                        replyBubble.innerHTML = '';
+                        cursor = document.createElement('span');
+                        cursor.className = 'response-cursor';
+                        cursor.setAttribute('aria-hidden', 'true');
+                    }
+
+                    // A provider can send many words in one chunk. Reveal each word separately so
+                    // the result still feels like a ChatGPT-style typed response.
+                    const words = payload.token.match(/\S+\s*|\s+/g) || [payload.token];
+                    for (const word of words) {
+                        reply += word;
+                        renderReply();
+                        await delay(22);
+                    }
                 }
 
-                // A provider can send many words in one chunk. Reveal each word separately so
-                // the result still feels like a ChatGPT-style typed response.
-                const words = payload.token.match(/\S+\s*|\s+/g) || [payload.token];
-                for (const word of words) {
-                    reply += word;
-                    renderReply();
-                    await delay(22);
-                }
+                if (done) break;
             }
 
-            if (done) break;
+            if (!replyBubble) throw new Error('The assistant returned an empty response.');
+            cursor.remove();
+            await loadSessions(searchInput.value.trim());
+        } finally {
+            shouldAutoScroll = isNearBottom();
         }
-
-        if (!replyBubble) throw new Error('The assistant returned an empty response.');
-        cursor.remove();
-        await loadSessions(searchInput.value.trim());
     }
 
     function addCodeCopyButtons(messageBubble) {
@@ -246,7 +273,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         messagesContainer.appendChild(loaderDiv);
         scrollToLatestMessage();
-        typingScrollTimer = window.setInterval(scrollToLatestMessage, 250);
     }
 
     function removeTypingIndicator() {
@@ -254,7 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (indicator) {
             indicator.remove();
         }
-        window.clearInterval(typingScrollTimer);
     }
 
     // Load dynamic sessions list
@@ -335,6 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function selectSession(sessionId) {
         currentSessionId = sessionId;
         sessionStorage.setItem('chat_session_id', sessionId);
+        shouldAutoScroll = true;
         
         // Highlight active session item in sidebar
         const items = sessionsList.querySelectorAll('.session-item');
@@ -433,11 +459,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Render user bubble
         appendMessage('You', messageText, true);
+        scrollToLatestMessage(true);
         messageInput.value = '';
         messageInput.focus();
 
         // Render loader
         showTypingIndicator();
+        scrollToLatestMessage(true);
         messageInput.disabled = true;
         sendBtn.disabled = true;
 

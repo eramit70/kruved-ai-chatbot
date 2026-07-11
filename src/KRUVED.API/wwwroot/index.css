@@ -260,7 +260,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 24px;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
+    overflow-anchor: none;
+    overscroll-behavior-y: contain;
 }
 
 /* Scrollbar Customization */
