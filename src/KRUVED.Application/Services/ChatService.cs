@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using KRUVED.Shared.Models;
@@ -228,6 +229,107 @@ namespace KRUVED.Application.Services
             }
 
             return reply;
+        }
+
+        public async IAsyncEnumerable<string> StreamChatReplyAsync(string sessionId, string message)
+        {
+            var apiKey = _groqSettings.ApiKey;
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                throw new InvalidOperationException("Groq API key is not configured. Please add 'Groq:ApiKey' to your appsettings.json or user secrets.");
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                throw new ArgumentException("Message cannot be empty.", nameof(message));
+            }
+
+            ChatSession session;
+            lock (_lock)
+            {
+                if (!_sessions.TryGetValue(sessionId, out session))
+                {
+                    session = new ChatSession
+                    {
+                        Id = sessionId,
+                        Title = message.Length > 30 ? message.Substring(0, 30) + "..." : message,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _sessions[sessionId] = session;
+                }
+                else if (session.Title == "New Conversation" && session.Messages.Count == 0)
+                {
+                    session.Title = message.Length > 30 ? message.Substring(0, 30) + "..." : message;
+                }
+
+                session.Messages.Add(new ChatMessage { Role = "user", Content = message });
+            }
+
+            List<ChatMessage> messagesCopy;
+            lock (_lock)
+            {
+                messagesCopy = new List<ChatMessage>(session.Messages);
+            }
+
+            var messages = new List<object> { new { role = "system", content = SystemPrompt } };
+            messages.AddRange(messagesCopy.Select(m => new
+            {
+                role = m.Role == "model" ? "assistant" : "user",
+                content = m.Content
+            }));
+
+            var payload = new
+            {
+                model = string.IsNullOrWhiteSpace(_groqSettings.Model) ? "llama-3.3-70b-versatile" : _groqSettings.Model,
+                messages,
+                stream = true
+            };
+
+            var client = _httpClientFactory.CreateClient();
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            request.Content = JsonContent.Create(payload);
+
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException($"Groq API error (Status: {response.StatusCode}): {errorContent}");
+            }
+
+            var reply = new StringBuilder();
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+            using var reader = new System.IO.StreamReader(responseStream);
+            while (!reader.EndOfStream)
+            {
+                var line = await reader.ReadLineAsync();
+                if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data: ")) continue;
+
+                var data = line[6..];
+                if (data == "[DONE]") break;
+
+                using var chunk = JsonDocument.Parse(data);
+                var choices = chunk.RootElement.GetProperty("choices");
+                if (choices.GetArrayLength() == 0) continue;
+
+                var delta = choices[0].GetProperty("delta");
+                if (!delta.TryGetProperty("content", out var content)) continue;
+
+                var token = content.GetString();
+                if (string.IsNullOrEmpty(token)) continue;
+                reply.Append(token);
+                yield return token;
+            }
+
+            if (reply.Length == 0)
+            {
+                throw new InvalidOperationException("Groq API completed request but returned an empty or invalid content candidate.");
+            }
+
+            lock (_lock)
+            {
+                session.Messages.Add(new ChatMessage { Role = "model", Content = reply.ToString() });
+            }
         }
     }
 }

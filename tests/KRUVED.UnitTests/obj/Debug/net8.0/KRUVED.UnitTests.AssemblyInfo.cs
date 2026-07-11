@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("KRUVED.UnitTests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a46f1f8915a0de88cafb6489c10616759ff0bea8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4fa14105c9451526bbd1efb8d2566dea7dbe9e2e")]
 [assembly: System.Reflection.AssemblyProductAttribute("KRUVED.UnitTests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("KRUVED.UnitTests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
