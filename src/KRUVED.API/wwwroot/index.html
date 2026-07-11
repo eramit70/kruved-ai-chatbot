@@ -20,7 +20,7 @@
 <body>
     <div class="app-container">
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside id="sidebar" class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
                     <i class="fa-solid fa-wand-magic-sparkles logo-icon"></i>
@@ -49,10 +49,14 @@
                 </button>
             </div>
         </aside>
+        <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
 
         <!-- Main Chat Area -->
         <main class="chat-area">
             <header class="chat-header">
+                <button id="menu-btn" class="menu-btn" type="button" aria-label="Open conversations" aria-controls="sidebar" aria-expanded="false">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
                 <div class="assistant-profile">
                     <div class="avatar">
                         <i class="fa-solid fa-robot"></i>

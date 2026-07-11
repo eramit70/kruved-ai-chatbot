@@ -6,12 +6,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendBtn = document.getElementById('send-btn');
     const sessionsList = document.getElementById('sessions-list');
     const searchInput = document.getElementById('search-input');
+    const sidebar = document.querySelector('.sidebar');
+    const menuBtn = document.getElementById('menu-btn');
+    const sidebarBackdrop = document.getElementById('sidebar-backdrop');
 
     let currentSessionId = sessionStorage.getItem('chat_session_id') || crypto.randomUUID();
     sessionStorage.setItem('chat_session_id', currentSessionId);
 
     function sessionHeaders(headers = {}) {
         return { ...headers, 'X-Session-ID': currentSessionId };
+    }
+
+    function setSidebarOpen(isOpen) {
+        sidebar.classList.toggle('is-open', isOpen);
+        sidebarBackdrop.classList.toggle('is-visible', isOpen);
+        menuBtn.setAttribute('aria-expanded', String(isOpen));
     }
 
     function appendMessage(sender, text, isUser = false, isSystem = false) {
@@ -176,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Click to load
             itemDiv.addEventListener('click', () => {
                 selectSession(session.id);
+                setSidebarOpen(false);
             });
 
             sessionsList.appendChild(itemDiv);
@@ -338,7 +348,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // New chat button action
     newChatBtn.addEventListener('click', () => {
         createNewSession();
+        setSidebarOpen(false);
     });
+
+    menuBtn.addEventListener('click', () => {
+        setSidebarOpen(!sidebar.classList.contains('is-open'));
+    });
+
+    sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
 
     // Initial startup sequence
     async function init() {

@@ -39,5 +39,5 @@ E:\Projects\ChatBot\src\KRUVED.API\obj\Debug\net8.0\refint\KRUVED.API.dll
 E:\Projects\ChatBot\src\KRUVED.API\obj\Debug\net8.0\KRUVED.API.pdb
 E:\Projects\ChatBot\src\KRUVED.API\obj\Debug\net8.0\KRUVED.API.genruntimeconfig.cache
 E:\Projects\ChatBot\src\KRUVED.API\obj\Debug\net8.0\ref\KRUVED.API.dll
-E:\Projects\ChatBot\src\KRUVED.API\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 E:\Projects\ChatBot\src\KRUVED.API\obj\Debug\net8.0\KRUVED.API.sourcelink.json
+E:\Projects\ChatBot\src\KRUVED.API\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

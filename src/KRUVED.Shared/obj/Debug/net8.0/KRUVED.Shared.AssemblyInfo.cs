@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("KRUVED.Shared")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a46f1f8915a0de88cafb6489c10616759ff0bea8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ee5867f77144499730db797eda54212e562bf026")]
 [assembly: System.Reflection.AssemblyProductAttribute("KRUVED.Shared")]
 [assembly: System.Reflection.AssemblyTitleAttribute("KRUVED.Shared")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
